@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Paddy Disease Detection – Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Prediction Dashboard</h1>
+
+    <div class="card">
+      <div class="dashboard-header">
+        <h2>Recent Predictions</h2>
+        <a href="index.html" class="btn secondary">← Back to Upload</a>
+      </div>
+
+      <div id="predictions-list" class="grid"></div>
+
+      <div id="dashboard-error" class="error hidden"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Load predictions when dashboard page opens
+    document.addEventListener("DOMContentLoaded", () => {
+      loadPredictions();
+    });
+  </script>
+</body>
+</html>

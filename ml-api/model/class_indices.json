@@ -1,0 +1,12 @@
+{
+  "Rice_bacterial_leaf_blight": 0,
+  "Rice_bacterial_leaf_streak": 1,
+  "Rice_bacterial_panicle_blight": 2,
+  "Rice_blast": 3,
+  "Rice_brown_spot": 4,
+  "Rice_dead_heart": 5,
+  "Rice_downy_mildew": 6,
+  "Rice_healthy": 7,
+  "Rice_hispa": 8,
+  "Rice_tungro": 9
+}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Paddy Disease Detection</title>
+</head>
+<body>
+
+<h2>Upload Rice Leaf Image</h2>
+
+<!-- <input type="file" id="imageInput">
+<button onclick="predict()">Predict</button> -->
+<!-- <button type="button" onclick="predict()">Predict</button> -->
+<input type="file" id="imageInput">
+<button type="button" onclick="predict()">Predict</button>
+
+<h3 id="result"></h3>
+
+<script>
+async function predict() {
+
+    const fileInput = document.getElementById("imageInput");
+    const file = fileInput.files[0];
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("http://127.0.0.1:8000/predict", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+
+    document.getElementById("result").innerHTML =
+        "Disease: " + data.disease + "<br>" +
+        "Confidence: " + data.confidence;
+}
+</script>
+
+</body>
+</html>

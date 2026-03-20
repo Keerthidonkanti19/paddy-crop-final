@@ -1,0 +1,17 @@
+venv/
+backend/app/venv/
+__pycache__/
+*.pyc
+
+node_modules/
+
+.env
+
+backend/backup_py/
+backup_app/
+
+*.h5
+*.pt
+*.pth
+
+uploaded_images/
