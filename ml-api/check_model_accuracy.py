@@ -1,61 +1,59 @@
 import tensorflow as tf
-from tensorflow.keras import layers, models
-from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
-dataset_dir = r"D:\paddy crop disease dataset - Copy\Ultimate Crop Disease Dataet\test"
 
+# -----------------------------
+# Configuration
+# -----------------------------
 IMG_SIZE = (224, 224)
 BATCH_SIZE = 32
 
-# Load dataset
+# New dataset path
+dataset_dir = "data/test"
+
+# -----------------------------
+# Load Test Dataset
+# -----------------------------
 test_ds = tf.keras.utils.image_dataset_from_directory(
     dataset_dir,
     labels="inferred",
     label_mode="categorical",
     image_size=IMG_SIZE,
     batch_size=BATCH_SIZE,
+    shuffle=False,
 )
 
-NUM_CLASSES = len(test_ds.class_names)
+class_names = test_ds.class_names
 
+print("\nDetected Classes:")
+for idx, name in enumerate(class_names):
+    print(f"{idx}: {name}")
+
+# -----------------------------
+# Preprocessing
+# -----------------------------
 def preprocess(image, label):
     image = preprocess_input(image)
     return image, label
 
-test_ds = test_ds.map(preprocess)
+AUTOTUNE = tf.data.AUTOTUNE
 
-# Rebuild the same architecture used in training
-inputs = layers.Input(shape=(224, 224, 3))
+test_ds = test_ds.map(preprocess).prefetch(AUTOTUNE)
 
-base_model = MobileNetV2(
-    input_shape=(224, 224, 3),
-    include_top=False,
-    weights="imagenet"
-)
+# -----------------------------
+# Load Trained Model
+# -----------------------------
+model = load_model("model/paddy_model.keras")
 
-base_model.trainable = True
-
-for layer in base_model.layers[:-30]:
-    layer.trainable = False
-
-x = base_model(inputs, training=False)
-x = layers.GlobalAveragePooling2D()(x)
-x = layers.Dropout(0.2)(x)
-outputs = layers.Dense(NUM_CLASSES, activation="softmax")(x)
-
-model = models.Model(inputs, outputs)
-
-# Load weights from trained model
-model.load_weights("model/paddy_model.h5")
-
-model.compile(
-    optimizer="adam",
-    loss="categorical_crossentropy",
-    metrics=["accuracy"]
-)
+# -----------------------------
+# Evaluate Model
+# -----------------------------
+print("\nEvaluating model on unseen test dataset...\n")
 
 loss, accuracy = model.evaluate(test_ds)
 
-print("Validation Accuracy:", accuracy)
-print("Validation Loss:", loss)
+print("\n==============================")
+print(f"Test Accuracy : {accuracy:.4f}")
+print(f"Test Loss     : {loss:.4f}")
+print("==============================")

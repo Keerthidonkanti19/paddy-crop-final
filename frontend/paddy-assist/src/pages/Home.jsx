@@ -27,6 +27,7 @@ export default function Home() {
   const openFile = () => fileInputRef.current?.click?.();
 
   const onCapture = async () => {
+    console.log("CAPTURE BUTTON CLICKED");
     // quick capture using MediaDevices if available
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });

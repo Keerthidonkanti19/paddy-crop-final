@@ -1,8 +1,23 @@
 import os
 
-train_path = r"D:\paddy crop disease dataset - Copy\Ultimate Crop Disease Dataet\train"
+for split in ["train", "val", "test"]:
 
-for cls in os.listdir(train_path):
-    cls_path = os.path.join(train_path, cls)
-    if os.path.isdir(cls_path):
-        print(cls, "→", len(os.listdir(cls_path)), "images")
+    print(f"\n===== {split.upper()} =====")
+
+    split_path = os.path.join("data", split)
+
+    total = 0
+
+    for cls in os.listdir(split_path):
+
+        cls_path = os.path.join(split_path, cls)
+
+        if os.path.isdir(cls_path):
+
+            count = len(os.listdir(cls_path))
+
+            total += count
+
+            print(f"{cls} → {count} images")
+
+    print(f"TOTAL → {total}")

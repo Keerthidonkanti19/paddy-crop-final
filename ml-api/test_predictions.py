@@ -1,20 +1,155 @@
-import sys
+# import sys
+# import os
+# import random
+# from pathlib import Path
+
+# # Add project root to Python path
+# sys.path.append(os.path.abspath(".."))
+
+# from backend.app.ml_model import predict_disease_from_path
+
+
+# # -----------------------------
+# # NEW TEST DATASET PATH
+# # -----------------------------
+# test_folder = Path("data/test")
+
+# # Collect all image files
+# image_extensions = ["*.jpg", "*.jpeg", "*.png"]
+
+# images = []
+
+# for ext in image_extensions:
+#     images.extend(list(test_folder.rglob(ext)))
+
+# # Safety check
+# if len(images) == 0:
+#     raise ValueError(f"No images found inside {test_folder}")
+
+# # Random sample images
+# sample_count = min(20, len(images))
+# sample_images = random.sample(images, sample_count)
+
+# print(f"\nTesting on {sample_count} random images...\n")
+
+# # -----------------------------
+# # Prediction Loop
+# # -----------------------------
+# for img in sample_images:
+
+#     result = predict_disease_from_path(str(img))
+
+#     print("=" * 60)
+
+#     print(f"Image File : {img.name}")
+
+#     # Actual class from folder name
+#     actual_class = img.parent.name
+#     print(f"Actual     : {actual_class}")
+
+#     print(f"Prediction : {result['label']}")
+
+#     confidence = result["confidence"]
+
+#     # Handle confidence formatting
+#     if isinstance(confidence, float):
+#         print(f"Confidence : {confidence:.4f}")
+#     else:
+#         print(f"Confidence : {confidence}")
+
+# print("\nTesting completed successfully.")
+
 import os
-import random
-from pathlib import Path
+import json
+import numpy as np
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
 
-sys.path.append(os.path.abspath(".."))
+# from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
-from backend.app.ml_model import predict_disease_from_path
+# =========================
+# LOAD MODEL
+# =========================
+MODEL_PATH = "model/paddy_model.keras"
+CLASS_INDEX_PATH = "model/class_indices.json"
 
-test_folder = r"D:\paddy crop disease dataset - Copy\Ultimate Crop Disease Dataet\test"
+model = load_model(MODEL_PATH)
 
-images = list(Path(test_folder).rglob("*.jpg"))
-sample_images = random.sample(images, 20)
+# =========================
+# LOAD CLASS LABELS
+# =========================
+# with open(CLASS_INDEX_PATH, "r") as f:
+#     class_indices = json.load(f)
 
-for img in sample_images:
-    result = predict_disease_from_path(str(img))
+# # Reverse dictionary
+# class_labels = {v: k for k, v in class_indices.items()}
+with open(CLASS_INDEX_PATH, "r") as f:
+    class_labels = json.load(f)
 
-    print(f"\nImage: {img.name}")
-    print("Prediction:", result["label"])
-    print("Confidence:", result["confidence"])
+# =========================
+# IMAGE FOLDER
+# =========================
+TEST_FOLDER = "sample_images"
+
+# =========================
+# PREDICT EACH IMAGE
+# =========================
+for filename in os.listdir(TEST_FOLDER):
+
+    image_path = os.path.join(TEST_FOLDER, filename)
+
+    try:
+        # Load image
+        img = image.load_img(image_path, target_size=(224, 224))
+
+        # Convert to array
+        img_array = image.img_to_array(img)
+
+        # Expand dimensions
+        img_array = np.expand_dims(img_array, axis=0)
+
+        # Normalize
+        # img_array = img_array / 255.0
+
+        # MobileNetV2 preprocessing
+        # img_array = preprocess_input(img_array)
+
+        # Prediction
+        predictions = model.predict(img_array, verbose=0)
+
+        # predicted_class = np.argmax(predictions)
+
+        # confidence = np.max(predictions) * 100
+
+        # # disease_name = class_labels[predicted_class]
+        # disease_name = class_labels[str(predicted_class)]
+
+        # print("\n========================")
+        # print(f"Image      : {filename}")
+        # print(f"Prediction : {disease_name}")
+        # print(f"Confidence : {confidence:.2f}%")
+        # print("========================")
+
+        predicted_class = np.argmax(predictions)
+
+        confidence = np.max(predictions) * 100
+
+        disease_name = class_labels[str(predicted_class)]
+
+        print("\n========================")
+        print(f"Image      : {filename}")
+        print(f"Prediction : {disease_name}")
+        print(f"Confidence : {confidence:.2f}%")
+
+        print("\nAll Class Probabilities:")
+
+        for idx, prob in enumerate(predictions[0]):
+
+            label = class_labels[str(idx)]
+
+            print(f"{label:<20}: {prob * 100:.2f}%")
+
+        print("========================")
+
+    except Exception as e:
+        print(f"Error processing {filename}: {e}")

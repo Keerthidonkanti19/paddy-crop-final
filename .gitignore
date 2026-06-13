@@ -15,3 +15,15 @@ backup_app/
 *.pth
 
 uploaded_images/
+
+# ML dataset (do not upload)
+ml-api/data/
+
+# Trained keras model
+ml-api/model/*.keras
+
+# Training graphs
+ml-api/model/*.png
+
+# Sample test images
+ml-api/sample_images/

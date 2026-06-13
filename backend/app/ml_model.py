@@ -1,120 +1,105 @@
-# ml_model.py
-from typing import Dict
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-from tensorflow.keras import layers, models
+#backend/app/ml_model.py
+
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Any
+
+import numpy as np
+from PIL import Image
+from tensorflow.keras.models import load_model
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
 
 # -----------------------------
 # Paths
 # -----------------------------
-BASE_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-MODEL_PATH = BASE_DIR / "ml-api" / "model" / "paddy_model.h5"
+MODEL_PATH = BASE_DIR / "ml-api" / "model" / "paddy_model.keras"
 CLASS_PATH = BASE_DIR / "ml-api" / "model" / "class_indices.json"
 
 
 # -----------------------------
-# Load class mapping
+# Load model
 # -----------------------------
-with open(CLASS_PATH) as f:
+model = load_model(MODEL_PATH)
+
+
+# -----------------------------
+# Load class labels
+# -----------------------------
+with open(CLASS_PATH, "r") as f:
     class_indices = json.load(f)
 
-idx_to_class = {v: k for k, v in class_indices.items()}
-NUM_CLASSES = len(class_indices)
+# Convert keys to integers
+class_indices = {
+    int(k): v for k, v in class_indices.items()
+}
 
 
 # -----------------------------
-# Build model architecture
-# Must match training model
+# Prediction Function
 # -----------------------------
-inputs = layers.Input(shape=(224, 224, 3))
+def predict_disease_from_path(file_path: str) -> dict[str, Any]:
 
-base_model = MobileNetV2(
-    input_shape=(224, 224, 3),
-    include_top=False,
-    weights="imagenet"
-)
+    # Load image
+    image = Image.open(file_path).convert("RGB")
 
-base_model.trainable = True
+    # Resize image
+    image = image.resize((224, 224))
 
-# Freeze first layers (fine-tuning setup)
-for layer in base_model.layers[:-40]:
-    layer.trainable = False
+    # Convert to numpy array
+    image = np.array(image)
 
+    # Add batch dimension
+    image = np.expand_dims(image, axis=0)
 
-x = base_model(inputs, training=False)
+    # Preprocess for MobileNetV2
+    image = preprocess_input(image)
 
-x = layers.GlobalAveragePooling2D()(x)
+    # Predict
+    predictions = model(image, training=False).numpy()[0]
 
-x = layers.BatchNormalization()(x)
+    # Debugging
+    print("\n===== Prediction Probabilities =====")
 
-x = layers.Dense(128, activation="relu")(x)
+    probabilities = {}
 
-x = layers.Dropout(0.4)(x)
+    for idx, prob in enumerate(predictions):
 
-outputs = layers.Dense(NUM_CLASSES, activation="softmax")(x)
+        label = class_indices[idx]
 
-model = models.Model(inputs, outputs)
+        prob_percent = round(float(prob) * 100, 2)
 
+        probabilities[label] = prob_percent
 
-# -----------------------------
-# Load trained weights
-# -----------------------------
-model.load_weights(MODEL_PATH)
+        print(f"{label}: {prob_percent}%")
 
+    # Best prediction
+    predicted_index = int(np.argmax(predictions))
 
-# -----------------------------
-# Prediction with TTA
-# -----------------------------
-def predict_disease_from_path(file_path: str) -> Dict:
+    predicted_label = class_indices[predicted_index]
 
-    img = image.load_img(file_path, target_size=(224, 224))
-    img_array = image.img_to_array(img)
+    confidence = round(float(np.max(predictions)) * 100, 2)
 
-    # Create augmented versions for TTA
-    # flipped = tf.image.flip_left_right(img_array)
-    # bright = tf.image.adjust_brightness(img_array, 0.1)
-    # rotated = tf.image.rot90(img_array)
-    flipped = tf.image.flip_left_right(img_array)
-    flipped_ud = tf.image.flip_up_down(img_array)
-    bright = tf.image.adjust_brightness(img_array, 0.2)
-    rotated = tf.image.rot90(img_array)
-    rotated2 = tf.image.rot90(img_array, k=2)
-
-    images = [img_array, flipped, flipped_ud, bright, rotated, rotated2]
-    # images = [img_array, flipped, bright, rotated]
-
-    predictions = []
-
-    for img_aug in images:
-
-        img_aug = np.expand_dims(img_aug, axis=0)
-
-        img_aug = preprocess_input(img_aug)
-
-        preds = model.predict(img_aug, verbose=0)
-
-        predictions.append(preds[0])
-
-    # Average predictions
-    avg_pred = np.mean(predictions, axis=0)
-
-    predicted_index = int(np.argmax(avg_pred))
-    confidence = float(np.max(avg_pred))
-
-    label = idx_to_class[predicted_index]
+    print("\nFinal Prediction:", predicted_label)
+    print("Confidence:", confidence)
 
     # Confidence threshold
-    if confidence < 0.70:
-        label = "Uncertain / unclear leaf image"
+    if confidence < 70:
+        return {
+            "success": True,
+            "prediction": predicted_label,
+            "confidence": confidence,
+            "warning": "Low confidence prediction",
+            "probabilities": probabilities,
+        }
 
     return {
-        "label": label,
-        "confidence": round(confidence, 4)
+        "success": True,
+        "prediction": predicted_label,
+        "confidence": confidence,
+        "probabilities": probabilities,
     }

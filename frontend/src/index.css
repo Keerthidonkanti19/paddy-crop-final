@@ -1,3 +1,22 @@
-@tailwind base; 
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-paddy-green: #2d7a4d;
+  --color-paddy-green-dark: #246340;
+  --color-paddy-mint: #e8f5ee;
+  --color-auth-bg: #f9fafb;
+  --color-auth-navy: #0f172a;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+  body {
+    margin: 0;
+    background: var(--color-auth-bg);
+    color: #111827;
+    -webkit-font-smoothing: antialiased;
+  }
+}

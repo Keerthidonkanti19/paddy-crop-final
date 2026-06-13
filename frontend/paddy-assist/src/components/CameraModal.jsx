@@ -9,10 +9,18 @@ export default function CameraModal({ open, onClose, onCapture }) {
     let stream;
     if (open) {
       navigator.mediaDevices.getUserMedia({ video: true })
-        .then(s => {
-          stream = s;
-          if (videoRef.current) videoRef.current.srcObject = s;
-        })
+        // .then(s => {
+        //   stream = s;
+        //   if (videoRef.current) videoRef.current.srcObject = s;
+        // })
+        .then(async (s) => {
+  stream = s;
+
+  if (videoRef.current) {
+    videoRef.current.srcObject = s;
+    await videoRef.current.play();
+  }
+})
         .catch(console.error);
     }
     return () => { if (stream) stream?.getTracks()?.forEach(t => t.stop()); };

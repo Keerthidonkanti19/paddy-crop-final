@@ -1,4 +1,5 @@
 # train_paddy_model.py
+
 import argparse
 import json
 import logging
@@ -6,7 +7,11 @@ from pathlib import Path
 from typing import Tuple
 
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
+
+from sklearn.utils.class_weight import compute_class_weight
+
 from tensorflow.keras import layers, models
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -19,6 +24,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
 )
+
 logger = logging.getLogger("paddy-train")
 
 SEED = 42
@@ -35,11 +41,16 @@ def load_datasets(
 ):
 
     train_dir = dataset_dir / "train"
+    val_dir = dataset_dir / "val"
     test_dir = dataset_dir / "test"
 
-    if not train_dir.exists() or not test_dir.exists():
+    if (
+        not train_dir.exists()
+        or not val_dir.exists()
+        or not test_dir.exists()
+    ):
         raise FileNotFoundError(
-            f"Expected 'train' and 'test' directories inside {dataset_dir}"
+            f"Expected train, val, and test directories inside {dataset_dir}"
         )
 
     logger.info("Loading training data from %s", train_dir)
@@ -53,7 +64,18 @@ def load_datasets(
         batch_size=batch_size,
     )
 
-    logger.info("Loading validation data from %s", test_dir)
+    logger.info("Loading validation data from %s", val_dir)
+
+    val_ds = tf.keras.utils.image_dataset_from_directory(
+        val_dir,
+        labels="inferred",
+        label_mode="categorical",
+        seed=SEED,
+        image_size=img_size,
+        batch_size=batch_size,
+    )
+
+    logger.info("Loading test data from %s", test_dir)
 
     test_ds = tf.keras.utils.image_dataset_from_directory(
         test_dir,
@@ -62,19 +84,51 @@ def load_datasets(
         seed=SEED,
         image_size=img_size,
         batch_size=batch_size,
+        shuffle=False,
     )
 
     class_names = train_ds.class_names
-    class_indices = {name: idx for idx, name in enumerate(class_names)}
+
+    # index -> class name mapping
+    class_indices = {
+        idx: name for idx, name in enumerate(class_names)
+    }
 
     logger.info("Detected classes: %s", class_indices)
+
+    # -----------------------------
+    # Compute class weights
+    # -----------------------------
+    train_labels = []
+
+    for _, labels in train_ds.unbatch():
+        train_labels.append(tf.argmax(labels).numpy())
+
+    class_weights = compute_class_weight(
+        class_weight="balanced",
+        classes=np.unique(train_labels),
+        y=train_labels,
+    )
+
+    class_weights = {
+        i: weight for i, weight in enumerate(class_weights)
+    }
+
+    logger.info("Class Weights: %s", class_weights)
 
     AUTOTUNE = tf.data.AUTOTUNE
 
     train_ds = train_ds.shuffle(1000).prefetch(AUTOTUNE)
+    val_ds = val_ds.prefetch(AUTOTUNE)
     test_ds = test_ds.prefetch(AUTOTUNE)
 
-    return train_ds, test_ds, class_indices
+    return (
+        train_ds,
+        val_ds,
+        test_ds,
+        class_indices,
+        class_weights,
+    )
 
 
 # -----------------------------
@@ -84,18 +138,16 @@ def build_model(num_classes: int, img_size=(224, 224)):
 
     inputs = layers.Input(shape=(img_size[0], img_size[1], 3))
 
-    # Stronger augmentation
+    # Lightweight augmentation
     data_augmentation = tf.keras.Sequential([
         layers.RandomFlip("horizontal"),
-        layers.RandomRotation(0.3),
-        layers.RandomZoom(0.3),
-        layers.RandomContrast(0.3),
-        layers.RandomTranslation(0.1, 0.1),
+        layers.RandomRotation(0.05),
+        layers.RandomZoom(0.05),
     ])
 
     x = data_augmentation(inputs)
 
-    # MobileNet preprocessing
+    # MobileNetV2 preprocessing
     x = preprocess_input(x)
 
     base_model = MobileNetV2(
@@ -104,7 +156,7 @@ def build_model(num_classes: int, img_size=(224, 224)):
         weights="imagenet",
     )
 
-    # Phase 1 training
+    # Freeze base model initially
     base_model.trainable = False
 
     x = base_model(x, training=False)
@@ -135,11 +187,19 @@ def build_model(num_classes: int, img_size=(224, 224)):
 # -----------------------------
 # Training
 # -----------------------------
-def train_model(model, base_model, train_ds, test_ds, epochs, output_dir):
+def train_model(
+    model,
+    base_model,
+    train_ds,
+    val_ds,
+    epochs,
+    output_dir,
+    class_weights,
+):
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    model_path = output_dir / "paddy_model.h5"
+    model_path = output_dir / "paddy_model.keras"
 
     callbacks = [
         tf.keras.callbacks.ModelCheckpoint(
@@ -163,45 +223,41 @@ def train_model(model, base_model, train_ds, test_ds, epochs, output_dir):
         ),
     ]
 
-    logger.info("Phase 1 Training (Frozen MobileNet)")
+    # -----------------------------
+    # Phase 1 Training
+    # -----------------------------
+    logger.info("Phase 1 Training (Frozen MobileNetV2)")
 
-    history = model.fit(
+    history_phase1 = model.fit(
         train_ds,
-        validation_data=test_ds,
+        validation_data=val_ds,
         epochs=15,
         callbacks=callbacks,
+        class_weight=class_weights,
     )
 
-    # -----------------------------
-    # Phase 2 Fine Tuning
-    # -----------------------------
-    logger.info("Phase 2 Fine-tuning MobileNet")
+    return history_phase1, None
 
-    base_model.trainable = True
 
-    for layer in base_model.layers[:-60]:
-        layer.trainable = False
+# -----------------------------
+# Evaluation
+# -----------------------------
+def evaluate_model(model, test_ds):
 
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
-        loss="categorical_crossentropy",
-        metrics=["accuracy"],
-    )
+    logger.info("Evaluating model on unseen test data")
 
-    history_fine = model.fit(
-        train_ds,
-        validation_data=test_ds,
-        epochs=epochs,
-        callbacks=callbacks,
-    )
+    test_loss, test_accuracy = model.evaluate(test_ds)
 
-    return history_fine
+    print("\n==============================")
+    print(f"Test Accuracy : {test_accuracy:.4f}")
+    print(f"Test Loss     : {test_loss:.4f}")
+    print("==============================\n")
 
 
 # -----------------------------
 # Plotting
 # -----------------------------
-def plot_training_history(history, output_dir):
+def plot_training_history(history, output_dir, phase_name):
 
     acc = history.history["accuracy"]
     val_acc = history.history["val_accuracy"]
@@ -211,20 +267,22 @@ def plot_training_history(history, output_dir):
 
     epochs_range = range(1, len(acc) + 1)
 
-    plt.figure()
+    plt.figure(figsize=(8, 6))
     plt.plot(epochs_range, acc, label="Training Accuracy")
     plt.plot(epochs_range, val_acc, label="Validation Accuracy")
     plt.legend()
-    plt.title("Accuracy")
-    plt.savefig(output_dir / "accuracy.png")
+    plt.title(f"{phase_name} Accuracy")
+
+    plt.savefig(output_dir / f"{phase_name}_accuracy.png")
     plt.close()
 
-    plt.figure()
+    plt.figure(figsize=(8, 6))
     plt.plot(epochs_range, loss, label="Training Loss")
     plt.plot(epochs_range, val_loss, label="Validation Loss")
     plt.legend()
-    plt.title("Loss")
-    plt.savefig(output_dir / "loss.png")
+    plt.title(f"{phase_name} Loss")
+
+    plt.savefig(output_dir / f"{phase_name}_loss.png")
     plt.close()
 
 
@@ -235,38 +293,79 @@ def main():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--dataset_dir", type=str, required=True)
-    parser.add_argument("--output_dir", type=str, default="model")
-    parser.add_argument("--epochs", type=int, default=25)
-    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument(
+        "--dataset_dir",
+        type=str,
+        required=True,
+    )
+
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="model",
+    )
+
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=15,
+    )
+
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=32,
+    )
 
     args = parser.parse_args()
 
     dataset_dir = Path(args.dataset_dir)
     output_dir = Path(args.output_dir)
 
-    train_ds, test_ds, class_indices = load_datasets(
+    # Load datasets
+    (
+        train_ds,
+        val_ds,
+        test_ds,
+        class_indices,
+        class_weights,
+    ) = load_datasets(
         dataset_dir=dataset_dir,
         batch_size=args.batch_size,
     )
 
-    model, base_model = build_model(num_classes=len(class_indices))
-
-    history = train_model(
-        model,
-        base_model,
-        train_ds,
-        test_ds,
-        args.epochs,
-        output_dir,
+    # Build model
+    model, base_model = build_model(
+        num_classes=len(class_indices)
     )
 
-    model.save(output_dir / "paddy_model.h5")
+    # Train model
+    history_phase1, history_fine = train_model(
+        model=model,
+        base_model=base_model,
+        train_ds=train_ds,
+        val_ds=val_ds,
+        epochs=args.epochs,
+        output_dir=output_dir,
+        class_weights=class_weights,
+    )
 
+    # Final evaluation
+    evaluate_model(model, test_ds)
+
+    # Save final model
+    model.save(output_dir / "paddy_model.keras")
+
+    # Save class mapping
     with open(output_dir / "class_indices.json", "w") as f:
-        json.dump(class_indices, f, indent=2)
+        json.dump(class_indices, f, indent=4)
 
-    plot_training_history(history, output_dir)
+    # Save training plots
+    plot_training_history(
+        history_phase1,
+        output_dir,
+        "phase1",
+    )
 
     print("Training completed successfully.")
 
