@@ -26,13 +26,11 @@
   "uploadHint": "Tap to select a clear leaf photo",
   "captureImage": "Capture with camera",
   "captureHint": "Use your device camera",
-  "or": "or",
   "analyzing": "Analyzing…",
   "resultTitle": "Result",
   "disease": "Disease",
   "fertilizers": "Fertilizers",
   "pesticides": "Pesticides",
-  "confidence": "Confidence",
   "profile": "Profile",
   "logout": "Logout",
   "language": "Language",
@@ -52,6 +50,36 @@
   "readResultCmd": "read result",
   "homeCmd": "home",
   "profileCmd": "profile",
+  "predict": "Predict Disease",
+
+  "predicting": "Predicting...",
+
+  "upload_image": "Please upload an image",
+
+  "prediction_failed": "Prediction failed",
+
+  "disease_detected": "Disease Detected",
+
+  "confidence": "Confidence",
+
+  "fertilizer": "Recommended Fertilizers",
+
+  "pesticide": "Recommended Pesticides",
+
+  "no_recommendation": "No recommendation available",
+  "farmerAssistant": "Farmer AI Assistant",
+  "askDiseaseQuestion": "Now ask your doubts about this disease.",
+  "startSpeaking": "Start Speaking",
+  "processing": "Processing...",
+  "aiThinking": "AI is thinking...",
+  "close": "Close",
+  "or": "OR",
+  "youAsked": "You Asked",
+  "aiSolution": "AI Solution",
+  "diseaseDetected": "Disease Detected",
+  "recommendedFertilizers": "Recommended Fertilizers",
+  "recommendedPesticides": "Recommended Pesticides",
+  "analyze": "Analyze Image",
   "errors": {
     "cameraDenied": "Camera permission denied.",
     "selectImage": "Please select an image.",

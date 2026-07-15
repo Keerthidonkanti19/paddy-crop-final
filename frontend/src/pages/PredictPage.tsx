@@ -1,6 +1,8 @@
 // frontend/src/pages/PredictPage.tsx
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 
 type PredictionResult = {
   id: number;
@@ -23,6 +25,7 @@ type PredictionResult = {
 };
 
 export default function PredictPage() {
+  const { t } = useTranslation();
   // ---------------------------------------------------
   // States
   // ---------------------------------------------------
@@ -67,7 +70,8 @@ export default function PredictPage() {
   const handlePredict = async () => {
 
     if (!selectedFile) {
-      setError("Please upload an image");
+      // setError("Please upload an image");
+      setError(t("upload_image"));
       return;
     }
 
@@ -79,25 +83,27 @@ export default function PredictPage() {
 
       const formData = new FormData();
 
-      formData.append("file", selectedFile);
+formData.append("file", selectedFile);
 
-      const token = localStorage.getItem("token");
+const token = localStorage.getItem("token");
 
-      const response = await fetch(
-        "http://127.0.0.1:8000/predict",
-        {
-          method: "POST",
+console.log("Current language =", i18n.language);
 
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+const response = await fetch(
+  `http://127.0.0.1:8000/predict?lang=${i18n.language}`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  }
+);
 
-          body: formData,
-        }
-      );
 
       if (!response.ok) {
-        throw new Error("Prediction failed");
+        // throw new Error("Prediction failed");
+        throw new Error(t("prediction_failed"));
       }
 
       const data = await response.json();
@@ -110,7 +116,8 @@ export default function PredictPage() {
 
       console.error(err);
 
-      setError("Prediction failed. Please try again.");
+      // setError("Prediction failed. Please try again.");
+      setError(t("prediction_failed"));
 
     } finally {
 
@@ -128,7 +135,8 @@ export default function PredictPage() {
 
         {/* Title */}
         <h1 className="text-3xl font-bold text-center mb-6">
-          🌾 changed
+          {/* 🌾 changed */}
+          {t("predict")}
         </h1>
 
         {/* Upload Input */}
@@ -162,7 +170,8 @@ export default function PredictPage() {
           disabled={loading}
           className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition"
         >
-          {loading ? "Predicting..." : "Predict Disease"}
+          {/* {loading ? "Predicting..." : "Predict Disease"} */}
+          {loading ? t("predicting") : t("predict")}
         </button>
 
         {/* Error */}
@@ -177,7 +186,8 @@ export default function PredictPage() {
           <div className="mt-8 bg-gray-50 rounded-2xl p-6 border">
 
             <h2 className="text-2xl font-bold mb-4">
-              🌾 Disease Detected
+              {/* 🌾 Disease Detected */}
+              🌾 {t("disease_detected")}
             </h2>
 
             <p className="text-xl font-semibold text-green-700 mb-4">
@@ -188,7 +198,8 @@ export default function PredictPage() {
             <div className="mb-4">
 
               <h3 className="font-semibold text-lg">
-                🎯 Confidence
+                {/* 🎯 Confidence */}
+                🎯 {t("confidence")}
               </h3>
 
               <p className="text-lg">
@@ -208,11 +219,13 @@ export default function PredictPage() {
             <div className="mb-4">
 
               <h3 className="font-semibold text-lg">
-                💊 Recommended Fertilizers
+                {/* 💊 Recommended Fertilizers */}
+                💊 {t("fertilizer")}
               </h3>
 
               <p>
-                {result.fertilizers || "No recommendation available"}
+                {/* {result.fertilizers || "No recommendation available"} */}
+                {result.fertilizers || t("no_recommendation")}
               </p>
 
             </div>
@@ -221,11 +234,12 @@ export default function PredictPage() {
             <div className="mb-4">
 
               <h3 className="font-semibold text-lg">
-                🧪 Recommended Pesticides
+                {/* 🧪 Recommended Pesticides */}
+                🧪 {t("pesticide")}
               </h3>
 
               <p>
-                {result.pesticides || "No recommendation available"}
+                {result.pesticides || t("no_recommendation")}
               </p>
 
             </div>

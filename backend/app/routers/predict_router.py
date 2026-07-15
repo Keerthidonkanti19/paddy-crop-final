@@ -4,6 +4,7 @@ import asyncio
 import os
 import shutil
 import uuid
+import json
 from typing import Annotated
 
 from fastapi import (
@@ -23,8 +24,17 @@ from app.ml_model import predict_disease_from_path
 from app.paths import UPLOAD_DIR
 from app.schemas_api import HistoryItemOut, PredictResponse
 from app.services.recommendations import get_recommendation
+from pydantic import BaseModel
+from app.llm import ask_farmer_question
 
 router = APIRouter(tags=["predictions"])
+class FarmerAssistantRequest(BaseModel):
+    disease: str
+    confidence: str
+    fertilizers: str
+    pesticides: str
+    question: str
+    language: str
 
 # Create upload directory if not exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -35,6 +45,13 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 # Max file size = 5 MB
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
+with open(
+    "app/data/disease_translations.json",
+    "r",
+    encoding="utf-8"
+) as f:
+
+    DISEASE_TRANSLATIONS = json.load(f)
 
 # ---------------------------------------------------
 # Save uploaded image
@@ -63,6 +80,7 @@ async def predict(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> PredictResponse:
+    print("BACKEND RECEIVED LANG =", lang)
 
     # -----------------------------
     # Validate file
@@ -149,6 +167,12 @@ async def predict(
     # -----------------------------
     label = str(pred.get("prediction") or "")
 
+    localized_label = (
+    DISEASE_TRANSLATIONS
+    .get(lang, DISEASE_TRANSLATIONS["en"])
+    .get(label, label)
+    )
+
     confidence_score = pred.get("confidence")
 
     probabilities = pred.get("probabilities", {})
@@ -159,6 +183,10 @@ async def predict(
     # Get recommendations
     # -----------------------------
     rec = get_recommendation(label, lang)
+#     rec = get_recommendation(
+#     localized_label,
+#     lang
+# )
 
     # -----------------------------
     # Save prediction history
@@ -166,7 +194,8 @@ async def predict(
     row = DetectionHistory(
         user_id=user.id,
         image_path=web_path,
-        predicted_disease=label,
+        # predicted_disease=label,
+        predicted_disease=localized_label,
         fertilizers=rec["fertilizers"],
         pesticides=rec["pesticides"],
         confidence_score=confidence_score,
@@ -249,3 +278,24 @@ def get_history(
     )
 
     return rows
+
+# ---------------------------------------------------
+# Farmer Voice Assistant API
+# ---------------------------------------------------
+@router.post("/ask-farmer-assistant")
+async def ask_farmer_ai(
+    req: FarmerAssistantRequest
+):
+
+    answer = await ask_farmer_question(
+        disease=req.disease,
+        confidence=req.confidence,
+        fertilizers=req.fertilizers,
+        pesticides=req.pesticides,
+        question=req.question,
+        language_code=req.language
+    )
+
+    return {
+        "answer": answer
+    }

@@ -1,0 +1,41 @@
+{
+  "en": {
+    "Bacterial Blight": "Bacterial Blight",
+    "Brown Spot": "Brown Spot",
+    "Healthy": "Healthy Crop",
+    "Leaf Blast": "Leaf Blast",
+    "Tungro": "Tungro Disease"
+  },
+
+  "te": {
+    "Bacterial Blight": "ఆకుల బ్యాక్టీరియా ఎండురోగం",
+    "Brown Spot": "గోధుమ మచ్చ తెగులు",
+    "Healthy": "ఆరోగ్యకరమైన పంట",
+    "Leaf Blast": "ఆకుమచ్చ తెగులు",
+    "Tungro": "టంగ్రో వైరస్ తెగులు"
+  },
+
+  "hi": {
+    "Bacterial Blight": "पत्ती का बैक्टीरियल झुलसा रोग",
+    "Brown Spot": "भूरा धब्बा रोग",
+    "Healthy": "स्वस्थ फसल",
+    "Leaf Blast": "ब्लास्ट रोग",
+    "Tungro": "टंग्रो वायरस रोग"
+  },
+
+  "ta": {
+    "Bacterial Blight": "பாக்டீரியா இலை கருகல் நோய்",
+    "Brown Spot": "பழுப்பு புள்ளி நோய்",
+    "Healthy": "ஆரோக்கியமான பயிர்",
+    "Leaf Blast": "இலை வெடிப்பு நோய்",
+    "Tungro": "டங்க்ரோ வைரஸ் நோய்"
+  },
+
+  "kn": {
+    "Bacterial Blight": "ಬ್ಯಾಕ್ಟೀರಿಯಾ ಎಲೆ ಒಣರೋಗ",
+    "Brown Spot": "ಕಂದು ಮಚ್ಚೆ ರೋಗ",
+    "Healthy": "ಆರೋಗ್ಯಕರ ಬೆಳೆ",
+    "Leaf Blast": "ಎಲೆ ಬ್ಲಾಸ್ಟ್ ರೋಗ",
+    "Tungro": "ಟಂಗ್ರೋ ವೈರಸ್ ರೋಗ"
+  }
+}

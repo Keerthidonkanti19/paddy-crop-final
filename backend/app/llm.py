@@ -158,3 +158,48 @@ async def generate_recommendations(
 
     parsed = _extract_json_object(raw)
     return _normalize_recommendations(parsed)
+
+# -----------------------------
+# Farmer Voice Assistant
+# -----------------------------
+async def ask_farmer_question(
+    disease: str,
+    confidence: str,
+    fertilizers: str,
+    pesticides: str,
+    question: str,
+    language_code: str
+) -> str:
+
+    language_name = _language_name(language_code)
+
+    prompt = f"""
+You are an expert agricultural assistant helping paddy farmers.
+
+Current prediction result:
+
+Detected disease: {disease}
+
+Confidence score: {confidence}
+
+Recommended fertilizers:
+{fertilizers}
+
+Recommended pesticides:
+{pesticides}
+
+Farmer question:
+{question}
+
+Answer in simple {language_name} language.
+
+Use the current prediction result while answering.
+
+Give short practical answer for farmer.
+"""
+
+    cfg = load_llm_config()
+
+    raw = await _call_groq(prompt, cfg)
+
+    return raw

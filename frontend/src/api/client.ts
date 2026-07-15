@@ -91,3 +91,21 @@ export function mediaUrl(path: string) {
   if (path.startsWith("http")) return path;
   return `${baseURL.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 }
+
+export async function askFarmerAssistant(
+  payload: {
+    disease: string;
+    confidence: string;
+    fertilizers: string;
+    pesticides: string;
+    question: string;
+    language: string;
+  }
+) {
+  const { data } = await api.post(
+    "/ask-farmer-assistant",
+    payload
+  );
+
+  return data;
+}
