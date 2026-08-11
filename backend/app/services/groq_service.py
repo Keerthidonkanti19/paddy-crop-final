@@ -1,5 +1,3 @@
-# backend/app/services/groq_service.py
-
 import os
 import json
 
@@ -9,93 +7,213 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+# ============================================================
+# GROQ CLIENT
+# ============================================================
+
 client = Groq(
     api_key=os.getenv("GROQ_API_KEY")
 )
 
+
 MODEL = os.getenv(
     "GROQ_MODEL",
-    # "llama-3.1-8b-instant"
-    # "GROQ_MODEL=llama3-70b-8192"
-    "GROQ_MODEL=llama-3.3-70b-versatile"
+    "llama-3.3-70b-versatile"
 )
+
+
+# ============================================================
+# LANGUAGE MAP
+# ============================================================
+
 LANGUAGE_MAP = {
     "en": "English",
     "te": "Telugu",
     "hi": "Hindi",
     "ta": "Tamil",
-    "kn": "Kannada"
+    "kn": "Kannada",
 }
 
+
+# ============================================================
+# AI RECOMMENDATION
+# ============================================================
 
 def get_ai_recommendation(
     disease_name: str,
     lang: str = "en"
 ):
-    print("GROQ LANG =", lang)
+
+    language = LANGUAGE_MAP.get(
+        lang,
+        "English"
+    )
+
+    print("========================================")
+    print("GROQ RECOMMENDATION")
+    print("Disease :", disease_name)
+    print("Language:", language)
+    print("========================================")
+
     prompt = f"""
-You are an agricultural assistant.
+You are an expert agricultural assistant specializing in
+paddy (rice) crop diseases.
 
-Disease detected: {disease_name}
+The AI image classification model has detected this disease:
 
-IMPORTANT LANGUAGE RULE:
+DISEASE:
+{disease_name}
 
-You MUST answer ONLY in {LANGUAGE_MAP.get(lang)} language.
+Your task is to provide fertilizer and pesticide recommendations
+SPECIFICALLY FOR THIS DISEASE.
 
-Forbidden:
+IMPORTANT:
+Do NOT give generic recommendations that could apply to any
+paddy crop.
 
-- English sentences
-- English explanation words
-- Mixing other languages
+The recommendations MUST be relevant to:
+{disease_name}
 
-Allowed:
+Consider:
+- The nature of the disease
+- Appropriate fertilizer/nutrient management
+- Appropriate pesticide/fungicide/insecticide management
+- Prevention and disease management principles
 
-- Product names only can stay English:
+PRODUCT NAMES MAY REMAIN IN ENGLISH because they are commonly
+used agricultural product names.
+
+Examples of product names:
 NPK
-Copper Sulphate
 Urea
 DAP
 Potash
+Copper Oxychloride
+Propiconazole
+Azoxystrobin
+Tricyclazole
+Tebuconazole
 
-Example for Hindi:
+IMPORTANT SAFETY RULES:
 
-BAD:
+1. Do not invent a pesticide for a disease if it is not
+   appropriate for that disease.
 
-Use Copper Sulphate spray every 5 days.
+2. Do not recommend pesticides for a healthy crop.
 
-GOOD:
+3. For Healthy, clearly state that pesticides are not required
+   unless a pest or disease is actually observed.
 
-हर 5 दिन में Copper Sulphate का छिड़काव करें।
+4. Do not provide dangerous or excessive chemical doses.
 
-Return ONLY JSON.
+5. If dosage information is uncertain, do not invent a number.
+   Instead say to follow the product label and local agricultural
+   recommendations.
+
+6. Fertilizer recommendations must be disease-specific and should
+   avoid unnecessary excessive nitrogen.
+
+7. Recommendations should be practical for rice farmers.
+
+LANGUAGE RULE:
+
+You MUST write the explanations ONLY in {language}.
+
+Do not mix English sentences with {language}.
+
+Product names may remain in English.
+
+Return ONLY valid JSON.
+
+The JSON must have exactly these fields:
 
 {{
-  "fertilizers": "...",
-  "pesticides": "..."
+    "fertilizers": "disease-specific fertilizer recommendation",
+    "pesticides": "disease-specific pesticide recommendation"
 }}
 
-No explanation outside JSON.
+Do not return markdown.
+
+Do not return ```json.
+
+Do not provide explanations outside the JSON.
 """
 
     response = client.chat.completions.create(
         model=MODEL,
         messages=[
             {
+                "role": "system",
+                "content": (
+                    "You are a careful agricultural "
+                    "recommendation assistant."
+                )
+            },
+            {
                 "role": "user",
                 "content": prompt
             }
         ],
-        temperature=0.7
+        temperature=0.2,
     )
 
-    text = response.choices[0].message.content
-    print("RAW GROQ =", text)
+    text = response.choices[0].message.content.strip()
+
+    print("RAW GROQ RESPONSE:")
+    print(text)
+
+    # ========================================================
+    # CLEAN POSSIBLE MARKDOWN
+    # ========================================================
+
+    if text.startswith("```"):
+        text = text.replace(
+            "```json",
+            ""
+        ).replace(
+            "```",
+            ""
+        ).strip()
+
+    # ========================================================
+    # PARSE JSON
+    # ========================================================
 
     try:
-        data = json.loads(text)
-        return data
 
-    except Exception:
+        data = json.loads(text)
+
+    except json.JSONDecodeError as e:
+
+        print(
+            "GROQ JSON ERROR:",
+            e
+        )
+
         raise Exception(
             "Invalid JSON returned by Groq"
         )
+
+    # ========================================================
+    # VALIDATE RESPONSE
+    # ========================================================
+
+    if "fertilizers" not in data:
+        raise Exception(
+            "Groq response missing fertilizers"
+        )
+
+    if "pesticides" not in data:
+        raise Exception(
+            "Groq response missing pesticides"
+        )
+
+    return {
+        "fertilizers": str(
+            data["fertilizers"]
+        ),
+        "pesticides": str(
+            data["pesticides"]
+        ),
+    }

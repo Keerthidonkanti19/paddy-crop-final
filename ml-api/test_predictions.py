@@ -1,63 +1,3 @@
-# import sys
-# import os
-# import random
-# from pathlib import Path
-
-# # Add project root to Python path
-# sys.path.append(os.path.abspath(".."))
-
-# from backend.app.ml_model import predict_disease_from_path
-
-
-# # -----------------------------
-# # NEW TEST DATASET PATH
-# # -----------------------------
-# test_folder = Path("data/test")
-
-# # Collect all image files
-# image_extensions = ["*.jpg", "*.jpeg", "*.png"]
-
-# images = []
-
-# for ext in image_extensions:
-#     images.extend(list(test_folder.rglob(ext)))
-
-# # Safety check
-# if len(images) == 0:
-#     raise ValueError(f"No images found inside {test_folder}")
-
-# # Random sample images
-# sample_count = min(20, len(images))
-# sample_images = random.sample(images, sample_count)
-
-# print(f"\nTesting on {sample_count} random images...\n")
-
-# # -----------------------------
-# # Prediction Loop
-# # -----------------------------
-# for img in sample_images:
-
-#     result = predict_disease_from_path(str(img))
-
-#     print("=" * 60)
-
-#     print(f"Image File : {img.name}")
-
-#     # Actual class from folder name
-#     actual_class = img.parent.name
-#     print(f"Actual     : {actual_class}")
-
-#     print(f"Prediction : {result['label']}")
-
-#     confidence = result["confidence"]
-
-#     # Handle confidence formatting
-#     if isinstance(confidence, float):
-#         print(f"Confidence : {confidence:.4f}")
-#     else:
-#         print(f"Confidence : {confidence}")
-
-# print("\nTesting completed successfully.")
 
 import os
 import json
@@ -65,7 +5,7 @@ import numpy as np
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 
-# from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
 # =========================
 # LOAD MODEL
@@ -112,7 +52,7 @@ for filename in os.listdir(TEST_FOLDER):
         # img_array = img_array / 255.0
 
         # MobileNetV2 preprocessing
-        # img_array = preprocess_input(img_array)
+        img_array = preprocess_input(img_array)
 
         # Prediction
         predictions = model.predict(img_array, verbose=0)

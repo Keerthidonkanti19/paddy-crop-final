@@ -312,32 +312,6 @@ setPreviewUrl(URL.createObjectURL(file));
         },
       ]);
 
-      // ---------- AI SPEAKS ----------
-      // window.speechSynthesis.cancel();
-
-      // const speech = new SpeechSynthesisUtterance(response.answer);
-
-      // speech.lang = langMap[i18n.language] || "en-IN";
-
-      // // choose best available voice
-      // const voices = window.speechSynthesis.getVoices();
-
-      // const selectedVoice = voices.find((v) =>
-      //   v.lang.toLowerCase().includes(
-      //     (langMap[i18n.language] || "en-IN")
-      //       .split("-")[0]
-      //       .toLowerCase()
-      //   )
-      // );
-
-      // if (selectedVoice) {
-      //   speech.voice = selectedVoice;
-      // }
-
-      // speech.rate = 1;
-      // speech.pitch = 1;
-
-      // window.speechSynthesis.speak(speech);
 
     } catch (error) {
       console.log(error);
