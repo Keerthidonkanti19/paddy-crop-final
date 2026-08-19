@@ -218,7 +218,7 @@ async def ask_farmer_question(
 
     prompt = f"""
 You are the Farmer AI Assistant inside a mobile application
-called Paddy Doctor.
+called KhetSaathi.
 
 You are helping an Indian rice (paddy) farmer understand the
 detected crop disease and the recommendations already provided
@@ -298,7 +298,7 @@ FORMATTING RULES
 ============================================================
 
 Return clean plain text suitable for direct display in the
-Paddy Doctor mobile application.
+KhetSaathi mobile application.
 
 DO NOT use Markdown formatting.
 

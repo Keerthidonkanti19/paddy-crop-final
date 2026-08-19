@@ -19,7 +19,7 @@ from app.routers import auth_router, predict_router
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Paddy Crop Disease Detection API", version="2.0.0")
+app = FastAPI(title="Khet Saathi API", version="2.0.0")
 
 _settings = get_settings()
 _user_origins = [o.strip() for o in _settings.cors_origins.split(",") if o.strip()]
@@ -50,4 +50,4 @@ app.include_router(predict_router.router)
 
 @app.get("/")
 def root() -> dict[str, str]:
-    return {"status": "ok", "message": "Paddy Crop Disease Detection API"}
+    return {"status": "ok", "message": "Khet Saathi API"}

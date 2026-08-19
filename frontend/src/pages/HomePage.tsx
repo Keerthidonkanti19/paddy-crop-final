@@ -356,7 +356,7 @@ setPreviewUrl(URL.createObjectURL(file));
         <Leaf className="text-green-600 w-8 h-8" />
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Paddy Doctor
+            KhetSaathi
           </h1>
           <p className="text-gray-500">Crop Disease Detection</p>
         </div>

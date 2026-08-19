@@ -28,7 +28,7 @@ export function TopBar() {
         </div>
 
         <div>
-          <h1 className="font-bold text-xl">Paddy Doctor</h1>
+          <h1 className="font-bold text-xl">KhetSaathi</h1>
           <p className="text-gray-500 text-sm">
             Crop Disease Detection
           </p>

@@ -68,9 +68,9 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-        <h1 className="mb-2 text-center text-3xl font-bold">Paddy Doctor</h1>
+        <h1 className="mb-2 text-center text-3xl font-bold">Khet Saathi</h1>
 
-        <p className="mb-6 text-center text-gray-500">Paddy Crop Disease Detection</p>
+        <p className="mb-6 text-center text-gray-500">Your Smart Farming Companion</p>
 
         {!isLogin && (
           <div className="mb-4">
