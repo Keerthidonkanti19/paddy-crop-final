@@ -26,6 +26,7 @@ from app.schemas_api import HistoryItemOut, PredictResponse
 from app.services.recommendations import get_recommendation
 from pydantic import BaseModel
 from app.llm import ask_farmer_question
+from pathlib import Path
 
 router = APIRouter(tags=["predictions"])
 class FarmerAssistantRequest(BaseModel):
@@ -45,12 +46,24 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 # Max file size = 5 MB
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
-with open(
-    "app/data/disease_translations.json",
-    "r",
-    encoding="utf-8"
-) as f:
+# with open(
+#     "app/data/disease_translations.json",
+#     "r",
+#     encoding="utf-8"
+# ) as f:
 
+#     DISEASE_TRANSLATIONS = json.load(f)
+TRANSLATIONS_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "data"
+    / "disease_translations.json"
+)
+
+with open(
+    TRANSLATIONS_PATH,
+    "r",
+    encoding="utf-8",
+) as f:
     DISEASE_TRANSLATIONS = json.load(f)
 
 # ---------------------------------------------------
