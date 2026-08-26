@@ -351,7 +351,7 @@ export default function PredictScreen() {
         </TouchableOpacity>
 
         {/* Gallery Button */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={
             styles.secondaryButton
           }
@@ -371,8 +371,24 @@ export default function PredictScreen() {
           >
             {t.predict.gallery}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+        <TouchableOpacity
+  style={styles.secondaryButton}
+  activeOpacity={0.8}
+  onPress={pickFromGallery}
+>
+  <View style={styles.galleryIconContainer}>
+    <Text style={styles.galleryIcon}>🖼️</Text>
+  </View>
 
+  <Text
+    style={styles.secondaryButtonText}
+    numberOfLines={2}
+  >
+    {t.predict.gallery}
+  </Text>
+</TouchableOpacity>
+  
         {/* Analyze Button */}
         <TouchableOpacity
           style={[
@@ -521,24 +537,47 @@ const styles = StyleSheet.create({
     fontSize: 20,
     marginRight: 9,
   },
-
+  
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "700",
   },
 
+  // secondaryButton: {
+  //   flexDirection: "row",
+  //   backgroundColor: "#FFFFFF",
+  //   borderRadius: 16,
+  //   paddingVertical: 16,
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  //   borderWidth: 1,
+  //   borderColor: "#08A64A",
+  //   marginBottom: 14,
+  // },
   secondaryButton: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#08A64A",
-    marginBottom: 14,
-  },
+  flexDirection: "row",
+  backgroundColor: "#FFFFFF",
+  borderRadius: 16,
+  paddingVertical: 16,
+  paddingHorizontal: 16,
+  alignItems: "center",
+  justifyContent: "center",
+  borderWidth: 1,
+  borderColor: "#08A64A",
+  marginBottom: 14,
+},
+
+  galleryIconContainer: {
+  width: 28,
+  alignItems: "center",
+  justifyContent: "center",
+  marginRight: 8,
+},
+
+galleryIcon: {
+  fontSize: 20,
+},
 
   secondaryButtonText: {
     color: "#087F3E",
