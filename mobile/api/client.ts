@@ -1,8 +1,25 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // const API_BASE_URL = "http://192.168.29.28:8000";
-const API_BASE_URL = "http://10.202.243.249:8000";
+// const API_BASE_URL = "http://10.202.243.249:8000";
+import Constants from "expo-constants";
 
+const getApiBaseUrl = () => {
+  const hostUri =
+    Constants.expoConfig?.hostUri;
+
+  if (hostUri) {
+    const host = hostUri.split(":")[0];
+
+    return `http://${host}:8000`;
+  }
+
+  // Temporary fallback for development.
+  // This will later be replaced with the production HTTPS API.
+  return "http://10.202.243.249:8000";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const TOKEN_KEY = "khet_saathi_access_token";
 const USER_KEY = "khet_saathi_user";
 
